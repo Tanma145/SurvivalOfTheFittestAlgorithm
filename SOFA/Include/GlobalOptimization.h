@@ -31,6 +31,7 @@ public:
   void GenerateInitialPopulation(int);
   void GenerateChild();
 
+  void AddIndividual(std::valarray<double>);
   double GetFittestGene(int);
   double GetFittestFitness();
 

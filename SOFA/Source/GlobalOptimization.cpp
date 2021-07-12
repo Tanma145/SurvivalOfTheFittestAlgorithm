@@ -9,9 +9,6 @@
 
 #include "../Include/GlobalOptimization.h"
 
-//       1         2         3         4         5         6         7         8         9         0
-//34567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890
-
 double InverseProbability(double y, double epsilon, double x_0, double x_min, double x_max) {
   if(0 <= y && y <= 1){
     return epsilon * tan(y * atan((x_max - x_0) / epsilon) + (1 - y) * atan((x_min - x_0) / epsilon)) + x_0;
@@ -33,9 +30,10 @@ void SurvivalOfTheFittestAlgotithm::GlobalOptimization::SetBoundaries(std::valar
     parallelepiped_ = bounds;
 }
 
-double SurvivalOfTheFittestAlgotithm::GlobalOptimization::Dispersion(unsigned int n) const{
-  return 1.0 - 2 / M_PI * atan(0.1 * (n - 300));
-  //return 2.0;
+double SurvivalOfTheFittestAlgotithm::GlobalOptimization::Dispersion(unsigned int k) const{
+  double a = 0.7;
+  double b = 2.5e-6;
+  return pow(k, -(a + b * k));
 }
 
 void SurvivalOfTheFittestAlgotithm::GlobalOptimization::CalculateProbabilities(){
@@ -86,31 +84,6 @@ void SurvivalOfTheFittestAlgotithm::GlobalOptimization::GenerateChild(){
   }
   Individual base = *(it);
 
-  /*
-  std::list<Individual>::iterator it, first = population_.begin();
-  int count, step;
-  count = population_size_;
-   
-  while (count > 0) {
-      it = first;
-      step = count / 2;
-      std::advance(it, step);
-      if (!(rnd < it->cumulative_probability)) {
-          first = ++it;
-          count -= step + 1;
-      }
-      else
-          count = step;
-  }
-  Individual base = *(first);
-
-  auto nn = std::upper_bound(population_.begin(), population_.end(), rnd, 
-    [](double value, const Individual& ind) {
-      return value < ind.cumulative_probability;
-    });
-
-  Individual base = *(nn);
-  */
   //mutation
   for (int i = 0; i < dimension_; i++) {
     rnd = urd(gen);
@@ -121,6 +94,15 @@ void SurvivalOfTheFittestAlgotithm::GlobalOptimization::GenerateChild(){
   base.fitness = objective_function(base.genotype);
   if (base.fitness > fittest.fitness) fittest = base;
   population_.push_back(base);
+  population_size_++;
+  CalculateProbabilities();
+}
+
+void SurvivalOfTheFittestAlgotithm::GlobalOptimization::AddIndividual(std::valarray<double> genes){
+  Individual ind;
+  ind.genotype = genes;
+  ind.fitness = objective_function(genes);
+  population_.push_back(ind);
   population_size_++;
   CalculateProbabilities();
 }
