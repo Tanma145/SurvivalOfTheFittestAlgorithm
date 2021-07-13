@@ -1,5 +1,3 @@
-#define _USE_MATH_DEFINES
-
 #include <algorithm>
 #include <cmath>
 #include <ctime>
@@ -7,7 +5,7 @@
 #include <random>
 #include <vector>
 
-#include "../Include/GlobalOptimization.h"
+#include "../Include/global_optimization.h"
 
 double InverseProbability(double y, double epsilon, double x_0, double x_min, double x_max) {
   if(0 <= y && y <= 1){
@@ -37,6 +35,7 @@ double SurvivalOfTheFittestAlgotithm::GlobalOptimization::Dispersion(unsigned in
 }
 
 void SurvivalOfTheFittestAlgotithm::GlobalOptimization::CalculateProbabilities(){
+  
   //calculating denomerator for probability
   denominator = 0;
   double sum = 0;
@@ -50,6 +49,16 @@ void SurvivalOfTheFittestAlgotithm::GlobalOptimization::CalculateProbabilities()
     cur->probability = numerator / denominator;
     cur->cumulative_probability = sum / denominator;
   }
+  
+  /*
+  for (Individual cur1 : population_) {
+    double inv_prob = 0;
+    for (Individual cur2 : population_){
+      inv_prob += pow(cur2.fitness / cur1.fitness, population_size_);
+    }
+    cur1.probability = 1 / inv_prob;
+  }
+  */
 }
 
 void SurvivalOfTheFittestAlgotithm::GlobalOptimization::GenerateInitialPopulation(int n){

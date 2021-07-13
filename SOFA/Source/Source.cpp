@@ -3,32 +3,9 @@
 #include <iostream>
 #include <valarray>
 
-#include "../Include/GlobalOptimization.h"
-#include "../Include/Individual.h"
-
-double TestFunction1(std::valarray<double> parameters) {
-  //(9.8686984535565490, 3.4023723048523760) - maximum found by DE
-  if (parameters.size() == 2) {
-    double x = parameters[0];
-    double y = parameters[1];
-    //function must be normalized so 0 < f(x) < 1 otherwise denominator increases indefinitely as population size grows
-    //0.0022 * (130 + f(x))
-    return 0.0022 * (130 + pow(sin(x) + 3 * cos(x) + sin(y) + 3 * cos(y), 2) * (x - 0.5 * y));
-  }
-  else {
-    throw 0;
-  }
-}
-double TestFunction2(std::valarray<double> parameters) {
-  if (parameters.size() == 2) {
-    double x = parameters[0];
-    double y = parameters[1];
-    return 0.009 * (60 + (sin(x) + 3 * cos(x) + sin(y) + 3 * cos(y)) * (x - 0.5 * y));
-  }
-  else {
-    throw 0;
-  }
-}
+#include "../Include/global_optimization.h"
+#include "../Include/individual.h"
+#include "../Include/test_functions.h"
 
 int main() {
   //set objective function
@@ -38,7 +15,7 @@ int main() {
   std::valarray<SurvivalOfTheFittestAlgotithm::Boundaries> bounds = { {0, 10}, {0, 10} };
   sofa.SetBoundaries(bounds);
 
-  sofa.GenerateInitialPopulation(10);
+  sofa.GenerateInitialPopulation(100);
 
   //output
   std::cout << "initial population" << std::endl;
@@ -47,7 +24,7 @@ int main() {
   }
   std::cout << std::endl;
   
-  for (int i = 0; i < 2000; i++) {
+  for (int i = 0; i < 5000; i++) {
     sofa.GenerateChild();
     std::cout << "(" << sofa.population_.back().genotype[0] << ", " << sofa.population_.back().genotype[1] << ") " << sofa.population_.back().fitness << " " << sofa.population_.back().probability << " " << sofa.denominator << std::endl;
   }
