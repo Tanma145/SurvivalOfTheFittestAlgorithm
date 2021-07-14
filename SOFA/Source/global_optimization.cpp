@@ -33,7 +33,7 @@ void GlobalOptimization::SurvivalOfTheFittestAlgorithm::SetBoundaries(std::valar
   parallelepiped_ = bounds;
 }
 
-//Boundaries must be specified as double (i. e. 2.0 not 2)
+//Boundaries must be specified as double (e. g. 2.0 not 2)
 void GlobalOptimization::SurvivalOfTheFittestAlgorithm::SetBoundaries(int _size, ...){ 
   if (_size % 2 == 0) {
     parallelepiped_.resize(_size);
