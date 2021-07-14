@@ -3,7 +3,7 @@
 
 #include <valarray>
 
-namespace SurvivalOfTheFittestAlgotithm{
+namespace GlobalOptimization{
 struct Individual {
   std::valarray<double> genotype;
   double fitness;

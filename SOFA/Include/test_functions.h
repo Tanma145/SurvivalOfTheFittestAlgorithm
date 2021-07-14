@@ -5,7 +5,7 @@
 
 constexpr double PI = 3.14159265358979323846;
 
-//for SOFA functions must be normalized so 0 < f(x) < 1 otherwise denominator of propability increases indefinitely as population size grows
+//for SOFA functions must be greater of equal to zero: f(x) >= 0;
 
 double TestFunction1(std::valarray<double> argument) {
   //(9.8686984535565490, 3.4023723048523760) - maximum found by DE
@@ -13,7 +13,7 @@ double TestFunction1(std::valarray<double> argument) {
     double x = argument[0];
     double y = argument[1];
     //0.0022 * (130 + f(x))
-     return 0.0022 * (130 + pow(sin(x) + 3 * cos(x) + sin(y) + 3 * cos(y), 2) * (x - 0.5 * y));
+     return (130 + pow(sin(x) + 3 * cos(x) + sin(y) + 3 * cos(y), 2) * (x - 0.5 * y));
   }
   else {
     throw 0;
@@ -24,7 +24,7 @@ double TestFunction2(std::valarray<double> argument) {
     double x = argument[0];
     double y = argument[1];
     //0.0106 * (52 + f(x))
-    return 0.0106 * (52 + (sin(x) + 3 * cos(x) + sin(y) + 3 * cos(y)) * (x - 0.5 * y));
+    return (52 + (sin(x) + 3 * cos(x) + sin(y) + 3 * cos(y)) * (x - 0.5 * y));
   }
   else {
     throw 0;

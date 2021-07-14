@@ -1,3 +1,5 @@
+#include <stdarg.h>
+
 #include <algorithm>
 #include <cmath>
 #include <ctime>
@@ -16,35 +18,54 @@ double InverseProbability(double y, double epsilon, double x_0, double x_min, do
   }
 }
 
-SurvivalOfTheFittestAlgotithm::GlobalOptimization::GlobalOptimization(double(*_objective_function)(std::valarray<double>), unsigned int n) {
-    objective_function = _objective_function;
-    dimension_ = n;
-    population_size_ = 0;
-    std::list<Individual> pop;
-    population_ = pop;
+GlobalOptimization::SurvivalOfTheFittestAlgorithm::SurvivalOfTheFittestAlgorithm(double (*objective_function)(std::valarray<double>),
+                                                                      unsigned int dim, unsigned int ipz = 100, double scbd = 0.01)
+                                                                      : initial_population_size_(ipz),
+                                                                      stopping_criteria_by_dispersion_(scbd) {
+  objective_function_ = objective_function;
+  dimension_ = dim;
+  population_size_ = 0;
+  std::list<Individual> pop;
+  population_ = pop;
 }
 
-void SurvivalOfTheFittestAlgotithm::GlobalOptimization::SetBoundaries(std::valarray<Boundaries> bounds) {
-    parallelepiped_ = bounds;
+void GlobalOptimization::SurvivalOfTheFittestAlgorithm::SetBoundaries(std::valarray<Boundaries> bounds) {
+  parallelepiped_ = bounds;
 }
 
-double SurvivalOfTheFittestAlgotithm::GlobalOptimization::Dispersion(unsigned int k) const{
+//Boundaries must be specified as double (i. e. 2.0 not 2)
+void GlobalOptimization::SurvivalOfTheFittestAlgorithm::SetBoundaries(int _size, ...){ 
+  if (_size % 2 == 0) {
+    parallelepiped_.resize(_size);
+    va_list argList;
+    va_start(argList, 2 *_size);
+    for (int i = 0; i < _size; i++) {
+      parallelepiped_[i].min = va_arg(argList, double);
+      parallelepiped_[i].max = va_arg(argList, double);
+    }
+  }
+  else {
+    throw -1;
+  }
+}
+
+double GlobalOptimization::SurvivalOfTheFittestAlgorithm::Dispersion(unsigned int k) const{
   double a = 0.7;
   double b = 2.5e-6;
   return pow(k, -(a + b * k));
 }
 
-void SurvivalOfTheFittestAlgotithm::GlobalOptimization::CalculateProbabilities(){
+void GlobalOptimization::SurvivalOfTheFittestAlgorithm::CalculateProbabilities(){
   
   //calculating denomerator for probability
   denominator = 0;
   double sum = 0;
   for (Individual cur : population_) {
-    denominator += pow(cur.fitness, population_size_);
+    denominator += pow(cur.fitness / fittest_.fitness, population_size_);
   }
   //calculating probabilities of choosing particular individual
   for (auto cur = population_.begin(); cur != population_.end(); cur++) {
-    double numerator = pow(cur->fitness, population_size_);
+    double numerator = pow(cur->fitness / fittest_.fitness, population_size_);
     sum += numerator;
     cur->probability = numerator / denominator;
     cur->cumulative_probability = sum / denominator;
@@ -61,7 +82,7 @@ void SurvivalOfTheFittestAlgotithm::GlobalOptimization::CalculateProbabilities()
   */
 }
 
-void SurvivalOfTheFittestAlgotithm::GlobalOptimization::GenerateInitialPopulation(int n){
+void GlobalOptimization::SurvivalOfTheFittestAlgorithm::GenerateInitialPopulation(int n){
   std::mt19937 gen(time(0));
   double rnd;
   std::list<Individual> population;
@@ -72,8 +93,8 @@ void SurvivalOfTheFittestAlgotithm::GlobalOptimization::GenerateInitialPopulatio
       std::uniform_real_distribution<> urd(parallelepiped_[j].min, parallelepiped_[j].max);
       ind.genotype[j] = urd(gen);
     }
-    ind.fitness = objective_function(ind.genotype);
-    if (ind.fitness > fittest.fitness) fittest = ind;
+    ind.fitness = objective_function_(ind.genotype);
+    if (ind.fitness > fittest_.fitness) fittest_ = ind;
     population.push_back(ind);
   }
   population_size_ = n;
@@ -81,7 +102,7 @@ void SurvivalOfTheFittestAlgotithm::GlobalOptimization::GenerateInitialPopulatio
   CalculateProbabilities();
 }
 
-void SurvivalOfTheFittestAlgotithm::GlobalOptimization::GenerateChild(){
+void GlobalOptimization::SurvivalOfTheFittestAlgorithm::GenerateChild(){
   //choosing random individual with probability of J(x_i)^k / (J(x_1)^k + ... + J(x_k)^k)
   std::mt19937 gen(time(0));
   std::uniform_real_distribution<> urd(0, 1);
@@ -100,26 +121,38 @@ void SurvivalOfTheFittestAlgotithm::GlobalOptimization::GenerateChild(){
       parallelepiped_[i].min, parallelepiped_[i].max);
   }
 
-  base.fitness = objective_function(base.genotype);
-  if (base.fitness > fittest.fitness) fittest = base;
+  base.fitness = objective_function_(base.genotype);
+  if (base.fitness > fittest_.fitness) fittest_ = base;
   population_.push_back(base);
   population_size_++;
   CalculateProbabilities();
 }
 
-void SurvivalOfTheFittestAlgotithm::GlobalOptimization::AddIndividual(std::valarray<double> genes){
+void GlobalOptimization::SurvivalOfTheFittestAlgorithm::AddIndividual(std::valarray<double> genes){
   Individual ind;
   ind.genotype = genes;
-  ind.fitness = objective_function(genes);
+  ind.fitness = objective_function_(genes);
   population_.push_back(ind);
   population_size_++;
   CalculateProbabilities();
 }
 
-double SurvivalOfTheFittestAlgotithm::GlobalOptimization::GetFittestGene(int i){
-  return fittest.genotype[i];
+std::valarray<double> GlobalOptimization::SurvivalOfTheFittestAlgorithm::GetFittest(){
+  return fittest_.genotype;
 }
 
-double SurvivalOfTheFittestAlgotithm::GlobalOptimization::GetFittestFitness(){
-  return fittest.fitness;
+double GlobalOptimization::SurvivalOfTheFittestAlgorithm::GetFittestGene(int i){
+  return fittest_.genotype[i];
+}
+
+double GlobalOptimization::SurvivalOfTheFittestAlgorithm::GetFittestFitness(){
+  return fittest_.fitness;
+}
+
+std::valarray<double> GlobalOptimization::SurvivalOfTheFittestAlgorithm::FindMaximum(){
+  GenerateInitialPopulation(initial_population_size_);
+  while (Dispersion(population_size_) > stopping_criteria_by_dispersion_) {
+    GenerateChild();
+  }
+  return GetFittest();
 }
