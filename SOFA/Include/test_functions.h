@@ -13,7 +13,7 @@ double TestFunction1(std::valarray<double> argument) {
     double x = argument[0];
     double y = argument[1];
     //0.0022 * (130 + f(x))
-     return (130 + pow(sin(x) + 3 * cos(x) + sin(y) + 3 * cos(y), 2) * (x - 0.5 * y));
+     return (pow(sin(x) + 3 * cos(x) + sin(y) + 3 * cos(y), 2) * (x - 0.5 * y));
   }
   else {
     throw 0;

@@ -7,7 +7,7 @@
 #include <random>
 #include <vector>
 
-#include "../Include/global_optimization.h"
+#include "../Include/survival_of_the_fittest_algorithm.h"
 
 double InverseProbability(double y, double epsilon, double x_0, double x_min, double x_max) {
   if(0 <= y && y <= 1){
@@ -25,7 +25,7 @@ GlobalOptimization::SurvivalOfTheFittestAlgorithm::SurvivalOfTheFittestAlgorithm
   objective_function_ = objective_function;
   dimension_ = dim;
   population_size_ = 0;
-  std::list<Individual> pop;
+  std::vector<Individual> pop;
   population_ = pop;
 }
 
@@ -58,17 +58,17 @@ double GlobalOptimization::SurvivalOfTheFittestAlgorithm::Dispersion(unsigned in
 void GlobalOptimization::SurvivalOfTheFittestAlgorithm::CalculateProbabilities(){
   
   //calculating denomerator for probability
-  denominator = 0;
+  denominator_ = 0;
   double sum = 0;
   for (Individual cur : population_) {
-    denominator += pow(cur.fitness / fittest_.fitness, population_size_);
+    denominator_ += pow((cur.fitness - lowest_fitness_) / (fittest_.fitness - lowest_fitness_), population_size_);
   }
   //calculating probabilities of choosing particular individual
-  for (auto cur = population_.begin(); cur != population_.end(); cur++) {
-    double numerator = pow(cur->fitness / fittest_.fitness, population_size_);
+  for (Individual cur : population_) {
+    double numerator = pow((cur.fitness - lowest_fitness_) / (fittest_.fitness - lowest_fitness_), population_size_);
     sum += numerator;
-    cur->probability = numerator / denominator;
-    cur->cumulative_probability = sum / denominator;
+    cur.probability = numerator / denominator_;
+    cur.cumulative_probability = sum / denominator_;
   }
   
   /*
@@ -85,8 +85,23 @@ void GlobalOptimization::SurvivalOfTheFittestAlgorithm::CalculateProbabilities()
 void GlobalOptimization::SurvivalOfTheFittestAlgorithm::GenerateInitialPopulation(int n){
   std::mt19937 gen(time(0));
   double rnd;
-  std::list<Individual> population;
-  for (int i = 0; i < n; i++) {
+  std::vector<Individual> population;
+  fittest_.fitness = 0; // should probably change it
+
+  //0 iteration
+  Individual ind;
+  ind.genotype.resize(dimension_);
+  for (int j = 0; j < dimension_; j++) {
+    std::uniform_real_distribution<> urd(parallelepiped_[j].min, parallelepiped_[j].max);
+    ind.genotype[j] = urd(gen);
+  }
+  ind.fitness = objective_function_(ind.genotype);
+  population.push_back(ind);
+  //
+  fittest_ = population.back();
+  lowest_fitness_ = population.back().fitness;
+  //
+  for (int i = 1; i < n; i++) {
     Individual ind;
     ind.genotype.resize(dimension_);
     for (int j = 0; j < dimension_; j++) {
@@ -95,6 +110,7 @@ void GlobalOptimization::SurvivalOfTheFittestAlgorithm::GenerateInitialPopulatio
     }
     ind.fitness = objective_function_(ind.genotype);
     if (ind.fitness > fittest_.fitness) fittest_ = ind;
+    if (ind.fitness < lowest_fitness_) lowest_fitness_ = ind.fitness;
     population.push_back(ind);
   }
   population_size_ = n;
@@ -108,11 +124,19 @@ void GlobalOptimization::SurvivalOfTheFittestAlgorithm::GenerateChild(){
   std::uniform_real_distribution<> urd(0, 1);
   double rnd = urd(gen);
 
-  auto it = population_.begin();
-  while (rnd > it->cumulative_probability) {
-      it++;
+  int left = 0;
+  int right = population_size_ - 1;
+  int middle;
+  while (left != right) {
+      middle = floor(left * 0.5 + right * 0.5);
+      if (population_[middle].cumulative_probability < rnd) {
+          left = middle + 1;
+      }
+      else {
+          right = middle;
+      }
   }
-  Individual base = *(it);
+  Individual base = population_[right];
 
   //mutation
   for (int i = 0; i < dimension_; i++) {
@@ -123,6 +147,7 @@ void GlobalOptimization::SurvivalOfTheFittestAlgorithm::GenerateChild(){
 
   base.fitness = objective_function_(base.genotype);
   if (base.fitness > fittest_.fitness) fittest_ = base;
+  if (base.fitness < lowest_fitness_) lowest_fitness_ = base.fitness;
   population_.push_back(base);
   population_size_++;
   CalculateProbabilities();

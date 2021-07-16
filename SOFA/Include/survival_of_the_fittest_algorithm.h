@@ -4,6 +4,7 @@
 #include <cmath>
 #include <list>
 #include <valarray>
+#include <vector>
 
 #include "Individual.h"
 
@@ -25,10 +26,10 @@ protected:
   double (*objective_function_)(std::valarray<double>);
 
   //
-  double denominator;
+  double denominator_;
+  double lowest_fitness_;
   Individual fittest_;
-  double population_size_;
-  std::list<Individual> population_;
+  std::vector<Individual> population_;
 
   //tools
   double Dispersion(unsigned int) const;
@@ -40,6 +41,7 @@ protected:
   double GetFittestGene(int);
   double GetFittestFitness();
 public:
+  double population_size_;
   SurvivalOfTheFittestAlgorithm(double (*objective_function)(std::valarray<double>), 
                      unsigned int dim, unsigned int ipz, double scbd);
   void SetBoundaries(std::valarray<Boundaries>);
