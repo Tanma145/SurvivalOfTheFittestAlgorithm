@@ -36,8 +36,9 @@ int main() {
 #else
 int main() {
   double initial_population_size = 100;
-  double stopping_criteria = 0.01;
-  int number_of_tests = 20;
+  double stopping_criteria = 0.005;
+  int number_of_tests = 10;
+  double (*func)(std::valarray<double>) = TestFunction1;
 
   std::cout << "number_of_tests = " << number_of_tests << std::endl;
   std::cout << "initial_population_size = " << initial_population_size << std::endl;
@@ -47,7 +48,7 @@ int main() {
   for (int i = 0; i < number_of_tests; i++){
     //calcumations
     int time_start = clock(); //timer start
-    GlobalOptimization::SurvivalOfTheFittestAlgorithm sofa(TestFunction1, 2, initial_population_size, stopping_criteria);
+    GlobalOptimization::SurvivalOfTheFittestAlgorithm sofa(func, 2, initial_population_size, stopping_criteria);
     sofa.SetBoundaries(2, 0.0, 10.0, 0.0, 10.0); //Boundaries must be specified as double (i. e. 2.0 not 2)
     std::valarray<double> fit = sofa.FindMaximum();
     int time_end = clock(); //timer end
@@ -60,9 +61,10 @@ int main() {
     std::cout.setf(std::ios::fixed);
     std::cout << std::setprecision(8);
     std::cout << "(" << fit[0] << ", " << fit[1] << ")";
+    std::cout << " Value: " << func(fit);
     std::cout.unsetf(std::ios::fixed);
-    std::cout << " Population size: " << sofa.population_size_;
-    std::cout << " Runtime: " << runtime << std::endl;
+    std::cout << "; Population size: " << sofa.population_size_;
+    std::cout << "; Runtime: " << runtime << std::endl;
   }
   std::cout << std::endl << "Average runtime (sec): " << total_runtime /  number_of_tests;
 

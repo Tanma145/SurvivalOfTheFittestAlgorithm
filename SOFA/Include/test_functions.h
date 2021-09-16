@@ -4,9 +4,84 @@
 #include <valarray>
 
 constexpr double PI = 3.14159265358979323846;
+namespace PlanctonFitnessParameters {
+  constexpr double c = 140;
+  constexpr double c_0 = 60;
+  constexpr double c_1 = 40;
+  constexpr double alpha = 2;
+  constexpr double beta = 2.5e-15;
+  constexpr double gamma = 333;
+  constexpr double delta = 0.01;
+  constexpr double epsilon = 0.13;
+  constexpr double sigma_1 = 0.25;
+  constexpr double sigma_2 = 0.003;
+  constexpr double ksi = 5e-19;
+}
+double PlanktonStrategy(double time, std::valarray<double> argument) {
+  int n = argument.size();
+  double height = 0;
+  for (int i = 0; i < n; i++) {
+    height += argument[i] * cos(2 * PI * i * (time - 0.5));
+  }
+  return height;
+}
+double FoodFunction(double height) {
+  double food = 0;
+  if (-PlanctonFitnessParameters::c < height && height < 0){
+    food = PlanctonFitnessParameters::sigma_1 * (tanh(height + PlanctonFitnessParameters::c_1) + 1);
+  }
+  return food;
+}
+double EnergyFunction(double time, std::valarray<double> argument) {
+  int n = argument.size();
+  double height = 0;
+  for (int i = 1; i < n; i++) {
+    height -= 2 * PI * i * argument[i] * sin(2 * PI * i * (time - 0.5));
+  }
+  return height * height;
+ 
+}
+double NaturalDeathFunction(double height) {
+  double energy = PlanctonFitnessParameters::ksi * cosh(height + PlanctonFitnessParameters::c_0);
+  return energy;
+}
+double PredatorHeightFunction(double height) {
+  double predator = 0;
+  if (-PlanctonFitnessParameters::c < height && height < 0) {
+    predator = PlanctonFitnessParameters::sigma_1 * (tanh(height + PlanctonFitnessParameters::c_1) + 1);
+  }
+  return predator;
+}
+double PredatorTimeFunction(double time) {
+  double predator = 0;
+  if (0 < time && time < 1) {
+    predator = cos(2 * PI * time) - PlanctonFitnessParameters::epsilon * cos(6 * PI * time);
+  }
+  return predator;
+}
+double PlanktonResources(double time, std::valarray<double> argument) {
+  double resources = 0;
+  resources += PlanctonFitnessParameters::alpha * FoodFunction(PlanktonStrategy(time, argument));
+  resources -= PlanctonFitnessParameters::beta * EnergyFunction(time, argument);
+  resources -= PlanctonFitnessParameters::gamma * PredatorHeightFunction(PlanktonStrategy(time, argument)) * PredatorTimeFunction(time);
+  resources -= PlanctonFitnessParameters::delta * NaturalDeathFunction(PlanktonStrategy(time, argument));
+  return resources;
+}
+double PlanctonFitness(std::valarray<double> argument){
+  int integration_steps = 500;
+  const double width = 1 / integration_steps;
 
-//for SOFA functions must be greater of equal to zero: f(x) >= 0;
-
+  double fit = 0; 
+  for (int i = 0; i < integration_steps; i++) {
+    const double x1 = i * width;
+    const double x2 = (i + 1) * width;
+    
+    fit += (x2 - x1) / 6.0 * (PlanktonResources(x1, argument) 
+         + 4.0 * PlanktonResources(0.5 * (x1 + x2), argument) 
+         + PlanktonResources(x2, argument));
+  }
+  return fit;
+}
 double TestFunction1(std::valarray<double> argument) {
   //(9.8686984535565490, 3.4023723048523760) - maximum found by DE
   if (argument.size() == 2) {
