@@ -3,7 +3,7 @@
 
 #include <valarray>
 
-constexpr double PI = 3.14159265358979323846;
+constexpr double MY_PI = 3.14159265358979323846;
 namespace PlanctonFitnessParameters {
   constexpr double c = 140;
   constexpr double c_0 = 60;
@@ -19,15 +19,15 @@ namespace PlanctonFitnessParameters {
 }
 double PlanktonStrategy(double time, std::valarray<double> argument) {
   int n = argument.size();
-  double height = 0;
-  for (int i = 0; i < n; i++) {
-    height += argument[i] * cos(2 * PI * i * (time - 0.5));
+  double height = argument[0];
+  for (int i = 1; i < n; i++) {
+    height += argument[i] * cos(2 * MY_PI * i * (time));
   }
   return height;
 }
 double FoodFunction(double height) {
   double food = 0;
-  if (-PlanctonFitnessParameters::c < height && height < 0){
+  if ((-1) * PlanctonFitnessParameters::c < height && height < 0){
     food = PlanctonFitnessParameters::sigma_1 * (tanh(height + PlanctonFitnessParameters::c_1) + 1);
   }
   return food;
@@ -36,40 +36,40 @@ double EnergyFunction(double time, std::valarray<double> argument) {
   int n = argument.size();
   double height = 0;
   for (int i = 1; i < n; i++) {
-    height -= 2 * PI * i * argument[i] * sin(2 * PI * i * (time - 0.5));
+    height -= 2 * MY_PI * i * argument[i] * sin(2 * MY_PI * i * (time));
   }
   return height * height;
  
 }
 double NaturalDeathFunction(double height) {
-  double energy = PlanctonFitnessParameters::ksi * cosh(height + PlanctonFitnessParameters::c_0);
-  return energy;
+  double death = PlanctonFitnessParameters::ksi * cosh(height + PlanctonFitnessParameters::c_0);
+  return death;
 }
 double PredatorHeightFunction(double height) {
   double predator = 0;
   if (-PlanctonFitnessParameters::c < height && height < 0) {
-    predator = PlanctonFitnessParameters::sigma_1 * (tanh(height + PlanctonFitnessParameters::c_1) + 1);
+    predator = PlanctonFitnessParameters::sigma_2 * (tanh(height + PlanctonFitnessParameters::c_1) + 1);
   }
   return predator;
 }
 double PredatorTimeFunction(double time) {
   double predator = 0;
   if (0 < time && time < 1) {
-    predator = cos(2 * PI * time) - PlanctonFitnessParameters::epsilon * cos(6 * PI * time);
+    predator = cos(2 * MY_PI * time) - PlanctonFitnessParameters::epsilon * cos(6 * MY_PI * time);
   }
   return predator;
 }
 double PlanktonResources(double time, std::valarray<double> argument) {
   double resources = 0;
   resources += PlanctonFitnessParameters::alpha * FoodFunction(PlanktonStrategy(time, argument));
-  resources -= PlanctonFitnessParameters::beta * EnergyFunction(time, argument);
+  resources -= PlanctonFitnessParameters::beta  * EnergyFunction(time, argument);
   resources -= PlanctonFitnessParameters::gamma * PredatorHeightFunction(PlanktonStrategy(time, argument)) * PredatorTimeFunction(time);
   resources -= PlanctonFitnessParameters::delta * NaturalDeathFunction(PlanktonStrategy(time, argument));
   return resources;
 }
 double PlanctonFitness(std::valarray<double> argument){
   int integration_steps = 500;
-  const double width = 1 / integration_steps;
+  const double width = 1 / (double) integration_steps;
 
   double fit = 0; 
   for (int i = 0; i < integration_steps; i++) {
@@ -77,13 +77,14 @@ double PlanctonFitness(std::valarray<double> argument){
     const double x2 = (i + 1) * width;
     
     fit += (x2 - x1) / 6.0 * (PlanktonResources(x1, argument) 
-         + 4.0 * PlanktonResources(0.5 * (x1 + x2), argument) 
-         + PlanktonResources(x2, argument));
+                              + 4.0 * PlanktonResources(0.5 * (x1 + x2), argument) 
+                              + PlanktonResources(x2, argument));
   }
   return fit;
 }
+
 double TestFunction1(std::valarray<double> argument) {
-  //(9.8686984535565490, 3.4023723048523760) - maximum found by DE
+  //(9.8686984535565490, 3.4023723048523760) - maximum found by DE on (0; 10)x(0; 10)
   if (argument.size() == 2) {
     double x = argument[0];
     double y = argument[1];
@@ -150,8 +151,8 @@ double HorrificFunction(std::valarray<double> argument) {
         B = B_matrix[i][j];
         C = C_matrix[i][j];
         D = D_matrix[i][j];
-        sum1 += A * sin(i * PI * (x - 1 / 2)) * sin(j * PI * (y - 1 / 2)) + B * cos(i * PI * (x - 1 / 2)) * cos(j * PI * (y - 1 / 2));
-        sum2 += C * sin(i * PI * (x - 1 / 2)) * sin(j * PI * (y - 1 / 2)) + D * cos(i * PI * (x - 1 / 2)) * cos(j * PI * (y - 1 / 2));
+        sum1 += A * sin(i * MY_PI * (x - 1 / 2)) * sin(j * MY_PI * (y - 1 / 2)) + B * cos(i * MY_PI * (x - 1 / 2)) * cos(j * MY_PI * (y - 1 / 2));
+        sum2 += C * sin(i * MY_PI * (x - 1 / 2)) * sin(j * MY_PI * (y - 1 / 2)) + D * cos(i * MY_PI * (x - 1 / 2)) * cos(j * MY_PI * (y - 1 / 2));
       }
     }
     return sqrt(sum1 * sum1 + sum2 * sum2);

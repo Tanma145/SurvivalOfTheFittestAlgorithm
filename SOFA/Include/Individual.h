@@ -4,11 +4,11 @@
 #include <valarray>
 
 namespace GlobalOptimization{
-struct Individual {
+class Individual {
+public:
   std::valarray<double> genotype;
   double fitness;
-  double probability;
-  double cumulative_probability;
+  Individual& operator=(Individual& ind);
 };
 }
 #endif //SOFA_INCLUDE_INDIVIDUAL_H

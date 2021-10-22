@@ -1,13 +1,12 @@
-#ifndef SOFA_INCLUDE_GLOBAL_OPTIMIZATION_H
-#define SOFA_INCLUDE_GLOBAL_OPTIMIZATION_H
+#ifndef SOFA_INCLUDE_SURVIAVAL_OF_THE_FITTEST_ALGORITHM_H
+#define SOFA_INCLUDE_SURVIAVAL_OF_THE_FITTEST_ALGORITHM_H
 
 #include <cmath>
 #include <list>
 #include <valarray>
 #include <vector>
 
-#include "Individual.h"
-
+#include "individual_SOFA.h"
 namespace GlobalOptimization{
 struct Boundaries {
   double min;
@@ -19,6 +18,9 @@ protected:
   //method parameters
   const double stopping_criteria_by_dispersion_;
   const unsigned int initial_population_size_;
+  const double dispersion_a;
+  const double dispersion_b;
+  bool maximize;
 
   //problem parameters
   unsigned int dimension_;
@@ -28,8 +30,8 @@ protected:
   //
   double denominator_;
   double lowest_fitness_;
-  Individual fittest_;
-  std::vector<Individual> population_;
+  IndividualSOFA fittest_;
+  std::vector<IndividualSOFA> population_;
 
   //tools
   double Dispersion(unsigned int) const;
@@ -43,11 +45,14 @@ protected:
 public:
   double population_size_;
   SurvivalOfTheFittestAlgorithm(double (*objective_function)(std::valarray<double>), 
-                     unsigned int dim, unsigned int ipz, double scbd);
+                     unsigned int dim, unsigned int ipz, double scbd,
+                     double da, double db);
   void SetBoundaries(std::valarray<Boundaries>);
   void SetBoundaries(int _size, ...);
+  void SetMaximize();
+  void SetMinimize();
 
-  std::valarray<double> FindMaximum();
+  std::valarray<double> Optimize();
 };
 }
-#endif //SOFA_INCLUDE_GLOBALOPTIMIZATION_H
+#endif //SOFA_INCLUDE_SURVIAVAL_OF_THE_FITTEST_ALGORITHM_H
